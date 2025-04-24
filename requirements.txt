@@ -1,0 +1,14 @@
+pandas
+scikit-learn
+dalex[full]
+dash
+dash-bootstrap-components
+plotly
+joblib
+dash-table
+scipy
+graphviz
+mlflow
+shap
+lime
+statsmodels

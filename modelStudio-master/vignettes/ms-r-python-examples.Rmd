@@ -1,0 +1,552 @@
+---
+title: "modelStudio - R & Python examples"
+author: "Hubert Baniecki"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{modelStudio - R & Python examples}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = FALSE,
+  comment = "#>",
+  warning = FALSE,
+  message = FALSE,
+  eval = FALSE
+)
+```
+
+# R & Python Examples
+
+## R
+
+The `modelStudio()` function uses `DALEX` explainers created with `DALEX::explain()` or `DALEXtra::explain_*()`.   
+
+```{r eval = FALSE}
+# packages for the explainer objects
+install.packages("DALEX")
+install.packages("DALEXtra")
+```
+
+### mlr [dashboard](https://modelstudio.drwhy.ai/mlr.html)
+
+In this example, we make a studio for the `ranger` model on the `apartments` data.
+
+```{r eval = FALSE}
+# load packages and data
+library(mlr)
+library(DALEXtra)
+library(modelStudio)
+
+data <- DALEX::apartments
+
+# split the data
+index <- sample(1:nrow(data), 0.7*nrow(data))
+train <- data[index,]
+test <- data[-index,]
+
+# fit a model
+task <- makeRegrTask(id = "apartments", data = train, target = "m2.price")
+learner <- makeLearner("regr.ranger", predict.type = "response")
+model <- train(learner, task)
+
+# create an explainer for the model
+explainer <- explain_mlr(model,
+                         data = test,
+                         y = test$m2.price,
+                         label = "mlr")
+
+# pick observations
+new_observation <- test[1:2,]
+rownames(new_observation) <- c("id1", "id2")
+
+# make a studio for the model
+modelStudio(explainer, new_observation)
+```
+
+### mlr3 [dashboard](https://modelstudio.drwhy.ai/mlr3.html)
+
+In this example, we make a studio for the `ranger` model on the `titanic` data.
+
+```{r eval = FALSE}
+# load packages and data
+library(mlr3)
+library(mlr3learners)
+library(DALEXtra)
+library(modelStudio)
+
+data <- DALEX::titanic_imputed
+
+# split the data
+index <- sample(1:nrow(data), 0.7*nrow(data))
+train <- data[index,]
+test <- data[-index,]
+
+# mlr3 TaskClassif takes target as factor
+train$survived <- as.factor(train$survived)
+
+# fit a model
+task <- TaskClassif$new(id = "titanic", backend = train, target = "survived")
+learner <- lrn("classif.ranger", predict_type = "prob")
+learner$train(task)
+
+# create an explainer for the model
+explainer <- explain_mlr3(learner,
+                          data = test,
+                          y = test$survived,
+                          label = "mlr3")
+
+# pick observations
+new_observation <- test[1:2,]
+rownames(new_observation) <- c("id1", "id2")
+
+# make a studio for the model
+modelStudio(explainer, new_observation)
+```
+
+### xgboost [dashboard](https://modelstudio.drwhy.ai/xgboost.html)
+
+In this example, we make a studio for the `xgboost` model on the `titanic` data.
+
+```{r eval = FALSE}
+# load packages and data
+library(xgboost)
+library(DALEX)
+library(modelStudio)
+
+data <- DALEX::titanic_imputed
+
+# split the data
+index <- sample(1:nrow(data), 0.7*nrow(data))
+train <- data[index,]
+test <- data[-index,]
+
+train_matrix <- model.matrix(survived ~.-1, train)
+test_matrix <- model.matrix(survived ~.-1, test)
+
+# fit a model
+xgb_matrix <- xgb.DMatrix(train_matrix, label = train$survived)
+params <- list(max_depth = 3, objective = "binary:logistic", eval_metric = "auc")
+model <- xgb.train(params, xgb_matrix, nrounds = 500)
+
+# create an explainer for the model
+explainer <- explain(model,
+                     data = test_matrix,
+                     y = test$survived,
+                     type = "classification",
+                     label = "xgboost")
+
+# pick observations
+new_observation <- test_matrix[1:2, , drop=FALSE]
+rownames(new_observation) <- c("id1", "id2")
+
+# make a studio for the model
+modelStudio(explainer, new_observation)
+```
+
+### caret [dashboard](https://modelstudio.drwhy.ai/caret.html)
+
+In this example, we make a studio for the `gbm` model on the `titanic` data.
+
+```{r eval = FALSE}
+# load packages and data
+library(caret)
+library(DALEX)
+library(modelStudio)
+
+data <- DALEX::titanic_imputed
+
+# split the data
+index <- sample(1:nrow(data), 0.7*nrow(data))
+train <- data[index,]
+test <- data[-index,]
+
+# caret train takes target as factor
+train$survived <- as.factor(train$survived)
+
+# fit a model
+cv <- trainControl(method = "repeatedcv", number = 3, repeats = 3)
+model <- train(survived ~ ., data = train, method = "gbm", trControl = cv, verbose = FALSE)
+
+# create an explainer for the model
+explainer <- explain(model,
+                     data = test,
+                     y = test$survived,
+                     label = "caret")
+
+# pick observations
+new_observation <- test[1:2,]
+rownames(new_observation) <- c("id1", "id2")
+
+# make a studio for the model
+modelStudio(explainer, new_observation)
+```
+
+### h2o [dashboard](https://modelstudio.drwhy.ai/h2o.html)
+
+In this example, we make a studio for the `h2o.automl` model on the `titanic` data.
+
+```{r eval = FALSE}
+# load packages and data
+library(h2o)
+library(DALEXtra)
+library(modelStudio)
+
+data <- DALEX::titanic_imputed
+
+# init h2o
+h2o.init()
+h2o.no_progress()
+
+# split the data
+h2o_split <- h2o.splitFrame(as.h2o(data))
+train <- h2o_split[[1]]
+test <- as.data.frame(h2o_split[[2]])
+
+# h2o automl takes target as factor
+train$survived <- as.factor(train$survived)
+
+# fit a model
+automl <- h2o.automl(y = "survived", training_frame = train, max_runtime_secs = 30)
+model <- automl@leader
+
+# create an explainer for the model
+explainer <- explain_h2o(model,
+                         data = test,
+                         y = test$survived,
+                         label = "h2o")
+
+# pick observations
+new_observation <- test[1:2,]
+rownames(new_observation) <- c("id1", "id2")
+
+# make a studio for the model
+modelStudio(explainer, new_observation,
+            B = 5)
+
+# shutdown h2o
+h2o.shutdown(prompt = FALSE)
+```
+
+### parsnip [dashboard](https://modelstudio.drwhy.ai/parsnip.html)
+
+In this example, we make a studio for the `ranger` model on the `apartments` data.
+
+```{r eval=FALSE}
+# load packages and data
+library(parsnip)
+library(DALEX)
+library(modelStudio)
+
+data <- DALEX::apartments
+
+# split the data
+index <- sample(1:nrow(data), 0.7*nrow(data))
+train <- data[index,]
+test <- data[-index,]
+
+# fit a model
+model <- rand_forest() %>%
+         set_engine("ranger", importance = "impurity") %>%
+         set_mode("regression") %>%
+         fit(m2.price ~ ., data = train)
+
+# create an explainer for the model
+explainer <- explain(model,
+                     data = test,
+                     y = test$m2.price,
+                     label = "parsnip")
+
+# make a studio for the model
+modelStudio(explainer)
+```
+
+### tidymodels [dashboard](https://modelstudio.drwhy.ai/tidymodels.html)
+
+In this example, we make a studio for the `ranger` model on the `titanic` data.
+
+```{r eval=FALSE}
+# load packages and data
+library(tidymodels)
+library(DALEXtra)
+library(modelStudio)
+
+data <- DALEX::titanic_imputed
+
+# split the data
+index <- sample(1:nrow(data), 0.7*nrow(data))
+train <- data[index,]
+test <- data[-index,]
+
+# tidymodels fit takes target as factor
+train$survived <- as.factor(train$survived)
+
+# fit a model
+rec <- recipe(survived ~ ., data = train) %>%
+       step_normalize(fare)
+
+clf <- rand_forest(mtry = 2) %>%
+       set_engine("ranger") %>%
+       set_mode("classification")
+
+wflow <- workflow() %>%
+         add_recipe(rec) %>%
+         add_model(clf)
+
+model <- wflow %>% fit(data = train)
+
+# create an explainer for the model
+explainer <- explain_tidymodels(model,
+                                data = test,
+                                y = test$survived,
+                                label = "tidymodels")
+
+# pick observations
+new_observation <- test[1:2,]
+rownames(new_observation) <- c("id1", "id2")
+
+# make a studio for the model
+modelStudio(explainer, new_observation)
+```
+
+## Python
+
+The `modelStudio()` function uses `dalex` explainers created with `dalex.Explainer()`.
+
+```{bash, eval=FALSE, engine="sh"}
+# package for the Explainer object
+pip install dalex -U
+```
+
+Use `pickle` Python module and `reticulate` R package to easily make a studio for a model.
+
+```{r eval = FALSE}
+# package for pickle load
+install.packages("reticulate")
+```
+
+### scikit-learn [dashboard](https://modelstudio.drwhy.ai/scikitlearn.html)
+
+In this example, we make a studio for the `Pipeline SVR` model on the `fifa` data.
+
+First, use `dalex` in Python:
+
+```{python, python.reticulate = FALSE, eval = FALSE}
+# load packages and data
+import dalex as dx
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVR
+from numpy import log
+
+data = dx.datasets.load_fifa()
+X = data.drop(columns=['overall', 'potential', 'value_eur', 'wage_eur', 'nationality'], axis=1)
+y = log(data.value_eur)
+
+# split the data
+X_train, X_test, y_train, y_test = train_test_split(X, y)
+
+# fit a pipeline model
+model = Pipeline([('scale', StandardScaler()), ('svm', SVR())])
+model.fit(X_train, y_train)
+
+# create an explainer for the model
+explainer = dx.Explainer(model, data=X_test, y=y_test, label='scikit-learn')
+
+# pack the explainer into a pickle file
+explainer.dump(open('explainer_scikitlearn.pickle', 'wb'))
+```
+
+Then, use `modelStudio` in R:
+
+```{r eval = FALSE}
+# load the explainer from the pickle file
+library(reticulate)
+explainer <- py_load_object("explainer_scikitlearn.pickle", pickle = "pickle")
+
+# make a studio for the model
+library(modelStudio)
+modelStudio(explainer, B = 5)
+```
+
+### lightgbm [dashboard](https://modelstudio.drwhy.ai/lightgbm.html)
+
+In this example, we make a studio for the `Pipeline LGBMClassifier` model on the `titanic` data.
+
+First, use `dalex` in Python:
+
+```{python, python.reticulate = FALSE, eval = FALSE}
+# load packages and data
+import dalex as dx
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.impute import SimpleImputer
+from sklearn.compose import ColumnTransformer
+from lightgbm import LGBMClassifier
+
+data = dx.datasets.load_titanic()
+X = data.drop(columns='survived')
+y = data.survived
+
+# split the data
+X_train, X_test, y_train, y_test = train_test_split(X, y)
+
+# fit a pipeline model
+numerical_features = ['age', 'fare', 'sibsp', 'parch']
+numerical_transformer = Pipeline(
+  steps=[
+    ('imputer', SimpleImputer(strategy='median')),
+    ('scaler', StandardScaler())
+  ]
+)
+categorical_features = ['gender', 'class', 'embarked']
+categorical_transformer = Pipeline(
+  steps=[
+    ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
+    ('onehot', OneHotEncoder(handle_unknown='ignore'))
+  ]
+)
+
+preprocessor = ColumnTransformer(
+  transformers=[
+    ('num', numerical_transformer, numerical_features),
+    ('cat', categorical_transformer, categorical_features)
+  ]
+)
+
+classifier = LGBMClassifier(n_estimators=300)
+
+model = Pipeline(
+  steps=[
+    ('preprocessor', preprocessor),
+    ('classifier', classifier)
+  ]
+)
+model.fit(X_train, y_train)
+
+# create an explainer for the model
+explainer = dx.Explainer(model, data=X_test, y=y_test, label='lightgbm')
+
+# pack the explainer into a pickle file
+explainer.dump(open('explainer_lightgbm.pickle', 'wb')) 
+```
+
+Then, use `modelStudio` in R:
+
+```{r eval = FALSE}
+# load the explainer from the pickle file
+library(reticulate)
+explainer <- py_load_object("explainer_lightgbm.pickle", pickle = "pickle")
+
+# make a studio for the model
+library(modelStudio)
+modelStudio(explainer)
+```
+
+### keras/tensorflow [dashboard](https://modelstudio.drwhy.ai/keras.html)
+
+In this example, we make a studio for the `Pipeline KerasClassifier` model on the `titanic` data.
+
+First, use `dalex` in Python:
+
+```{python, python.reticulate = FALSE, eval = FALSE}
+# load packages and data
+import dalex as dx
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.impute import SimpleImputer
+from sklearn.compose import ColumnTransformer
+from keras.wrappers.scikit_learn import KerasClassifier
+from keras.layers import Dense
+from keras.models import Sequential
+
+data = dx.datasets.load_titanic()
+X = data.drop(columns='survived')
+y = data.survived
+
+# split the data
+X_train, X_test, y_train, y_test = train_test_split(X, y)
+
+# fit a pipeline model
+numerical_features = ['age', 'fare', 'sibsp', 'parch']
+numerical_transformer = Pipeline(
+  steps=[
+    ('imputer', SimpleImputer(strategy='median')),
+    ('scaler', StandardScaler())
+  ]
+)
+categorical_features = ['gender', 'class', 'embarked']
+categorical_transformer = Pipeline(
+  steps=[
+    ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
+    ('onehot', OneHotEncoder(handle_unknown='ignore'))
+  ]
+)
+
+preprocessor = ColumnTransformer(
+  transformers=[
+    ('num', numerical_transformer, numerical_features),
+    ('cat', categorical_transformer, categorical_features)
+  ]
+)
+
+def create_architecture():
+    model = Sequential()
+    # there are 17 inputs after the pipeline
+    model.add(Dense(60, input_dim=17, activation='relu'))
+    model.add(Dense(1, activation='sigmoid'))
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    return model
+
+classifier = KerasClassifier(build_fn=create_architecture,
+                             epochs=100, batch_size=32, verbose=False)
+
+model = Pipeline(
+  steps=[
+    ('preprocessor', preprocessor),
+    ('classifier', classifier)
+  ]
+)
+model.fit(X_train, y_train)
+
+# create an explainer for the model
+explainer = dx.Explainer(model, data=X_test, y=y_test, label='keras')
+
+# pack the explainer into a pickle file
+explainer.dump(open('explainer_keras.pickle', 'wb'))
+```
+
+Then, use `modelStudio` in R:
+
+```{r eval = FALSE}
+# load the explainer from the pickle file
+library(reticulate)
+
+#! add blank create_architecture function before load !
+py_run_string('
+def create_architecture():
+    return True
+')
+
+explainer <- py_load_object("explainer_keras.pickle", pickle = "pickle")
+
+# make a studio for the model
+library(modelStudio)
+modelStudio(explainer)
+```
+
+-------------------------------------------------------------------
+
+## References
+
+* Theoretical introduction to the plots: [Explanatory Model Analysis. Explore, Explain, and Examine Predictive Models.](https://ema.drwhy.ai/)
+* The input object is implemented in [DALEX](https://modeloriented.github.io/DALEX/)
+* Feature Importance, Ceteris Paribus, Partial Dependence and Accumulated Dependence explanations
+are implemented in [ingredients](https://modeloriented.github.io/ingredients/)
+* Break Down and Shapley Values explanations are implemented in [iBreakDown](https://modeloriented.github.io/iBreakDown/)

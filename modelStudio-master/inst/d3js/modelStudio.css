@@ -1,0 +1,149 @@
+text {
+  font-family:'Fira Sans';
+  font-style:normal;
+  fill: #371ea3;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+}
+
+.bigTitle {
+  font-family:'Fira Sans';
+  font-style:normal;
+  font-weight: 700;
+  font-size: 18px;
+  text-align: left;
+}
+
+.smallTitle {
+  font-family:'Fira Sans';
+  font-style:normal;
+  font-weight: 700;
+  font-size: 13px;
+  text-align: left;
+}
+
+.axisTitle {
+  font-family:'Fira Sans';
+  font-style:normal;
+  font-weight: 700;
+  font-size: 13px;
+  text-align: center;
+}
+
+.axisLabel {
+  font-family:'Fira Sans';
+  font-style:normal;
+  font-weight: 500;
+  font-size: 11px;
+}
+
+.axisLabel .domain {
+    stroke: #371ea3;
+}
+
+.legendTitle {
+  font-family:'Fira Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-size: 13px;
+  text-align: left;
+}
+
+.legendLabel {
+  font-family:'Fira Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-size: 11px;
+  text-align: left;
+}
+
+.legendBox {
+  fill: #ceced9;
+  opacity: 0.5;
+}
+
+.interceptLine {
+  stroke: #371ea3;
+	stroke-width: 1px;
+	stroke-opacity: 1;
+	stroke-linecap: "butt";
+}
+
+.dotLine {
+	fill: none;
+	stroke: #371ea3;
+	stroke-width: 0.7px;
+}
+
+.grid .tick line {
+  /*stroke: #f0f0f4;*/
+  stroke: #ceced9;
+  opacity: 0.5;
+  stroke-width: 1px
+}
+
+.mainTitle {
+  font-family:'Fira Sans';
+  font-style: normal;
+  font-size: 25px;
+  font-weight: 500;
+}
+
+.subTitle {
+  font-family:'Fira Sans';
+  font-style: normal;
+  font-size: 18px;
+  font-weight: 500;
+  dominant-baseline: hanging;
+}
+
+.mainLine {
+  stroke: #371ea3;
+  stroke-width: 1.5px;
+  stroke-opacity: 1;
+  stroke-linecap: butt;
+}
+
+.footerTitle {
+  font-family:'Fira Sans';
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.footerLine {
+  stroke: #371ea3;
+  stroke-width: 1px;
+  stroke-opacity: 0.5;
+  stroke-linecap: butt;
+}
+
+
+.enterChoiceButton {
+  fill: #ceced9;
+  opacity: 0.5;
+  stroke:#371ea3;
+  stroke-width:2;
+}
+
+.exitChoiceButton {
+  fill: #FFFFFF;
+  stroke:#371ea3;
+  stroke-width:2;
+}
+
+.descriptionBox {
+  fill: #ceced9;
+  opacity: 0.5;
+}
+
+.descriptionLabel {
+  font-family:'Fira Sans';
+  font-style: normal;
+  fill: #371ea3;
+  font-weight: 700;
+  font-size: 14px;
+}
