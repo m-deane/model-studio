@@ -650,7 +650,15 @@ app.layout = html.Div([ # Main container
 # --- Add Callbacks ---
 
 def create_error_figure(title, error_message):
-    "Helper to create a Plotly figure showing an error."
+    """Helper to create a Plotly figure showing an error message.
+
+    Args:
+        title (str): The title for the error plot.
+        error_message (str): The error message text to display.
+
+    Returns:
+        go.Figure: A Plotly figure object containing the error message.
+    """
     fig = go.Figure().update_layout(title=title)
     fig.add_annotation(text=f"Error: {error_message}", showarrow=False)
     return fig
@@ -706,6 +714,14 @@ def update_plots(plot_tl, plot_tr, plot_bl, plot_br, obs_index, variable, variab
     Input('observation-slider', 'value')
 )
 def update_observation_display(selected_index):
+    """Updates the text display for the selected observation index or date.
+
+    Args:
+        selected_index (int): The index selected via the slider.
+
+    Returns:
+        str: The formatted date string or index number to display.
+    """
     if date_strings and 0 <= selected_index < len(date_strings):
         return date_strings[selected_index]
     elif 0 <= selected_index < data_length: # Fallback if dates weren't loaded
@@ -719,6 +735,16 @@ def update_observation_display(selected_index):
     Input('reference-plot-selector', 'value')
 )
 def update_reference_section(selected_plot_key):
+    """Updates the reference plot and explanation text based on the selected plot type.
+
+    Args:
+        selected_plot_key (str): The key identifying the plot type selected
+                                 in the reference dropdown.
+
+    Returns:
+        tuple[go.Figure, str]: A tuple containing the generated reference
+                              Plotly figure and the corresponding explanation markdown text.
+    """
     if ref_explainer is None:
         no_ref_explainer_text = "Reference explainer could not be created. Cannot show examples."
         return create_error_figure("Reference Error", no_ref_explainer_text), no_ref_explainer_text
@@ -740,6 +766,16 @@ def update_reference_section(selected_plot_key):
     Input('url', 'pathname') # Add Input to trigger on load
 )
 def update_fitted_actual_ts(pathname): # Add pathname argument
+    """Generates the time series plot showing fitted vs. actual values.
+
+    Triggered on initial app load.
+
+    Args:
+        pathname (str): The current URL pathname (unused but required by Dash for triggering).
+
+    Returns:
+        go.Figure: A Plotly figure object showing the fitted and actual time series.
+    """
     if explainer is None or residuals_df is None or date_series is None:
         return create_error_figure("Error", "Data for plot not available.")
 
@@ -776,10 +812,17 @@ def update_fitted_actual_ts(pathname): # Add pathname argument
 
 def plot_residuals_vs_feature(explainer_obj, residuals_data, feature_name):
     """Generates a scatter plot of residuals vs. a specific feature.
+
     Args:
-        explainer_obj: The DALEX explainer object.
+        explainer_obj: The DALEX explainer object containing the data.
         residuals_data (pd.DataFrame): DataFrame with a 'residuals' column.
-        feature_name (str): Name of the feature.
+        feature_name (str): Name of the feature to plot against residuals.
+
+    Returns:
+        go.Figure: A Plotly scatter plot figure.
+
+    Raises:
+        ValueError: If the feature name is not found or residuals data is invalid.
     """
     if feature_name not in explainer_obj.data.columns:
         raise ValueError(f"Feature '{feature_name}' not found in explainer data.")
@@ -802,9 +845,16 @@ def plot_residuals_vs_feature(explainer_obj, residuals_data, feature_name):
 
 def plot_feature_distribution(explainer_obj, feature_name):
     """Generates a histogram for the distribution of a specific feature.
+
     Args:
-        explainer_obj: The DALEX explainer object.
-        feature_name (str): Name of the feature.
+        explainer_obj: The DALEX explainer object containing the data.
+        feature_name (str): Name of the feature to plot the distribution for.
+
+    Returns:
+        go.Figure: A Plotly histogram figure.
+
+    Raises:
+        ValueError: If the feature name is not found in the explainer data.
     """
     if feature_name not in explainer_obj.data.columns:
         raise ValueError(f"Feature '{feature_name}' not found in explainer data.")
@@ -818,9 +868,16 @@ def plot_feature_distribution(explainer_obj, feature_name):
 
 def plot_target_vs_feature(explainer_obj, feature_name):
     """Generates a scatter plot of the target variable vs. a specific feature.
+
     Args:
-        explainer_obj: The DALEX explainer object.
-        feature_name (str): Name of the feature.
+        explainer_obj: The DALEX explainer object containing data and target.
+        feature_name (str): Name of the feature to plot against the target.
+
+    Returns:
+        go.Figure: A Plotly scatter plot figure.
+
+    Raises:
+        ValueError: If the feature name is not found in the explainer data.
     """
     if feature_name not in explainer_obj.data.columns:
         raise ValueError(f"Feature '{feature_name}' not found in explainer data.")
@@ -839,9 +896,16 @@ def plot_target_vs_feature(explainer_obj, feature_name):
     return fig
 
 def plot_residuals_qq(residuals_data):
-    """Generates a QQ plot for residuals.
+    """Generates a Normal Quantile-Quantile (QQ) plot for residuals.
+
     Args:
-        residuals_data (pd.DataFrame): DataFrame with a 'residuals' column.
+        residuals_data (pd.DataFrame): DataFrame containing a 'residuals' column.
+
+    Returns:
+        go.Figure: A Plotly figure showing the QQ plot.
+
+    Raises:
+        ValueError: If residuals data is invalid or missing.
     """
     if residuals_data is None or 'residuals' not in residuals_data.columns:
          raise ValueError("Valid residuals data is not available.")
@@ -860,8 +924,16 @@ def plot_residuals_qq(residuals_data):
 
 def plot_scale_location(residuals_data):
     """Generates a Scale-Location plot (sqrt(|residuals|) vs fitted).
+
     Args:
-        residuals_data (pd.DataFrame): DataFrame with 'residuals' and 'fitted_values' columns.
+        residuals_data (pd.DataFrame): DataFrame with 'residuals' and
+                                       'fitted_values' columns.
+
+    Returns:
+        go.Figure: A Plotly scatter plot figure for Scale-Location.
+
+    Raises:
+        ValueError: If residuals or fitted values data is invalid or missing.
     """
     if residuals_data is None or not all(c in residuals_data.columns for c in ['residuals', 'fitted_values']):
         raise ValueError("Valid residuals and fitted values data is not available.")
@@ -880,9 +952,16 @@ def plot_scale_location(residuals_data):
 
 def plot_correlation_heatmap(corr_matrix, title="Feature Correlation Heatmap"):
     """Generates a heatmap of a given correlation matrix.
+
     Args:
-        corr_matrix (pd.DataFrame): The correlation matrix.
-        title (str): Plot title.
+        corr_matrix (pd.DataFrame): The correlation matrix to plot.
+        title (str): The title for the heatmap.
+
+    Returns:
+        go.Figure: A Plotly heatmap figure.
+
+    Raises:
+        ValueError: If the correlation matrix is None.
     """
     if corr_matrix is None:
         raise ValueError("Correlation matrix is not available.")
@@ -893,7 +972,26 @@ def plot_correlation_heatmap(corr_matrix, title="Feature Correlation Heatmap"):
 
 # --- Main Plot Generation Logic --- #
 def generate_figure(plot_key, obs_index, variable, variable_2):
-    """Main function to generate a figure based on plot_key and inputs"""
+    """Main function to generate a specific explanation figure based on user selections.
+
+    Calls appropriate DALEX methods or helper plotting functions based on the
+    plot_key and necessary inputs (observation index, variable(s)).
+
+    Args:
+        plot_key (str | None): The key identifying the type of plot to generate
+                                (e.g., 'break_down', 'model_profile_pdp').
+                                If None, returns a placeholder figure.
+        obs_index (int | None): The index of the observation selected, required for
+                                instance-level plots.
+        variable (str | None): The name of the primary variable selected, required
+                               for feature-level plots.
+        variable_2 (str | None): The name of the secondary variable selected,
+                                required for 2D feature-level plots.
+
+    Returns:
+        go.Figure: The generated Plotly figure for the requested explanation,
+                   or an error figure if generation fails or inputs are invalid.
+    """
     print(f"Generating figure for key: {plot_key}, obs: {obs_index}, var: {variable}, var_2: {variable_2}")
     if explainer is None:
         return create_error_figure("Error", "Explainer not available")
@@ -1031,7 +1129,19 @@ def generate_figure(plot_key, obs_index, variable, variable_2):
 
 # --- Reference Plot Generation Logic --- #
 def generate_reference_figure(plot_key):
-    """Generates a plot for the Reference tab using the ref_explainer."""
+    """Generates an example plot for the Reference tab using the ref_explainer.
+
+    Uses predefined observation/variable(s) from the reference dataset (Iris)
+    to illustrate the selected plot type.
+
+    Args:
+        plot_key (str | None): The key identifying the type of plot to generate
+                                an example for. If None, returns a placeholder.
+
+    Returns:
+        go.Figure: The generated example Plotly figure, or an error figure
+                   if the reference explainer is unavailable or generation fails.
+    """
     print(f"Generating reference figure for key: {plot_key}")
     if ref_explainer is None:
         return create_error_figure("Reference Error", "Reference explainer not available")
@@ -1162,9 +1272,16 @@ import lime.lime_tabular
 def plot_acf_pacf(residuals_data, plot_type='acf'):
     """Generates ACF or PACF plot for residuals using statsmodels calculation
        and manual Plotly plotting.
+
     Args:
         residuals_data (pd.DataFrame): DataFrame with a 'residuals' column.
-        plot_type (str): 'acf' or 'pacf'.
+        plot_type (str): 'acf' or 'pacf'. Determines which plot to generate.
+
+    Returns:
+        go.Figure: A Plotly figure showing the ACF or PACF plot.
+
+    Raises:
+        ValueError: If residuals data is invalid or plot_type is incorrect.
     """
     if residuals_data is None or 'residuals' not in residuals_data.columns:
         raise ValueError("Valid residuals data is not available.")
@@ -1221,9 +1338,19 @@ def plot_acf_pacf(residuals_data, plot_type='acf'):
 
 def plot_lime_explanation(explainer_obj, obs_index):
     """Generates a LIME explanation plot for a specific observation.
+
+    Uses the LIME library to create a local linear explanation for the model's
+    prediction on the selected instance.
+
     Args:
         explainer_obj: The DALEX explainer object (used for data and predict func).
         obs_index (int): The index of the observation to explain.
+
+    Returns:
+        go.Figure: A Plotly bar chart showing LIME feature weights.
+
+    Raises:
+        ValueError: If the observation index is out of bounds.
     """
     if not (0 <= obs_index < len(explainer_obj.data)):
         raise ValueError(f"Observation index {obs_index} is out of bounds.")

@@ -1,38 +1,52 @@
-# Model Studio (Python Implementation)
+# Model Studio - Time Series Dashboard
 
-This project provides a Python implementation of an interactive model explanation dashboard, similar to the R `modelStudio` package.
+This project provides an interactive dashboard built with Dash and Plotly for exploring and understanding time series models using DALEX explainers.
+
+## Features
+
+*   Load time series data and a corresponding model.
+*   Visualize model explanations using:
+    *   Partial Dependence Plots (PDP)
+    *   Accumulated Local Effects (ALE) Plots
+*   Display fitted vs. actual time series values.
+*   Interactive controls for selecting features and data points.
 
 ## Setup
 
-1.  **Install dependencies:**
+1.  **Clone the repository:**
+    ```bash
+    git clone <your-repo-url>
+    cd model-studio
+    ```
+
+2.  **Create and activate a virtual environment (optional but recommended):**
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+    ```
+
+3.  **Install dependencies:**
     ```bash
     pip install -r requirements.txt
     ```
 
-2.  **Prepare Data:**
-    Place your dataset (e.g., `preem.csv`) in the `_data/` directory.
+## Running the App
 
-3.  **(Optional) Train Model:**
-    Run the `model_trainer.py` script if you need to train a new model:
-    ```bash
-    python model_trainer.py
-    ```
-    *Note: A pre-trained model might be provided or generated automatically by the app in future steps.*
+Ensure your data file (`data/dummy_data.csv` by default) and your model (`data/model.pkl` by default) are in the `data/` directory.
 
-4.  **Run the Dashboard:**
-    ```bash
-    python app.py
-    ```
-    The dashboard will be available at http://127.0.0.1:8050/ by default.
+Then, run the Dash application:
 
-## Project Structure
+```bash
+python app.py
+```
 
-*   `_data/`: Contains the dataset(s).
-*   `assets/`: Static files for the Dash app (e.g., CSS).
-*   `trained_model/`: Stores the saved machine learning model.
-*   `data_loader.py`: Handles data loading and preprocessing.
-*   `model_trainer.py`: Trains and saves the model.
-*   `explainer.py`: Creates the DALEX explainer and generates explanations.
-*   `app.py`: The main Dash application file.
-*   `requirements.txt`: Python package dependencies.
-*   `README.md`: This file. 
+The dashboard will be available at http://127.0.0.1:8050/ by default.
+
+## Data
+
+The application expects:
+*   A CSV file containing the time series data, including features used by the model and the target variable.
+*   A date/time column that can be parsed by pandas.
+*   A pickled model file (`.pkl`) compatible with the DALEX explainer.
+
+Modify the `DATA_FILE_PATH`, `MODEL_FILE_PATH`, and `DATE_COLUMN` variables in `app.py` if your file names or date column differ. 
